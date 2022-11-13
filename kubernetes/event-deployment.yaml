@@ -50,7 +50,7 @@ spec:
         resources:
           limits:
             memory: "128Mi"
-            cpu: "100m"
+            cpu: "50m"
         ports:
         - containerPort: 3000      
       - name: cloud-sql-proxy
@@ -74,7 +74,7 @@ spec:
         resources:
           limits:
             memory: "128Mi"
-            cpu: "100m"
+            cpu: "50m"
       volumes:
       - name: secrets-volumes
         secret:
