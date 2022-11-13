@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-deployment
+spec:
+  selector:
+    matchLabels:
+      app: event-app
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: event-app
+        name: event-app
+    spec:
+      containers:
+      - name: event-app
+        image: IMAGE_CONTAINER_K8S_REPLACE
+        env:
+          - name: HOST_DB
+            valueFrom:
+              configMapKeyRef: 
+                name: event-env-variables
+                key: HOST_DB
+          - name: PORT_DB
+            valueFrom:
+              configMapKeyRef: 
+                name: event-env-variables
+                key: PORT_DB
+          - name: DATABASE
+            valueFrom:
+              configMapKeyRef: 
+                name: event-env-variables
+                key: DATABASE
+          - name: USERDB
+            valueFrom:
+              configMapKeyRef: 
+                name: event-env-variables
+                key: USERDB
+          - name: PASS
+            valueFrom:
+              configMapKeyRef: 
+                name: event-env-variables
+                key: PASS        
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 3000      
+      - name: cloud-sql-proxy
+        
+        image: gcr.io/cloudsql-docker/gce-proxy:1.28.0 # make sure the use the latest version
+        command:
+          - "/cloud_sql_proxy"
+          - "-ip_address_types=PRIVATE"
+
+          # Replace DB_PORT with the port the proxy should listen on
+          # Defaults: MySQL: 3306, Postgres: 5432, SQLServer: 1433
+          - "-instances=servicepica-puj:us-central1:notifydatabase=tcp:3306"
+          - "-credential_file=/secrets/service_account.json"
+        securityContext:
+          
+          runAsNonRoot: true
+        volumeMounts:
+        - name: secrets-volumes
+          mountPath: /secrets/
+          readOnly: true
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+      volumes:
+      - name: secrets-volumes
+        secret:
+          secretName: secret-dbaccess    
