@@ -6,6 +6,11 @@ spec:
   selector:
     matchLabels:
       app: event-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1  
   replicas: 2
   template:
     metadata:
@@ -45,7 +50,7 @@ spec:
         resources:
           limits:
             memory: "128Mi"
-            cpu: "500m"
+            cpu: "50m"
         ports:
         - containerPort: 3000      
       - name: cloud-sql-proxy
@@ -69,7 +74,7 @@ spec:
         resources:
           limits:
             memory: "128Mi"
-            cpu: "100m"
+            cpu: "50m"
       volumes:
       - name: secrets-volumes
         secret:
