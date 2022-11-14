@@ -1,0 +1,39 @@
+variables:
+- name: service-image
+  value: 'event'
+- group: google-info
+
+trigger:
+- development
+
+pool:
+  name: upj-agent
+
+steps:
+- task: Docker@2
+  displayName: 'Build an image'
+  inputs:
+    repository: $(url-acr)/$(proyect-id)/$(repository-back)/$(service-image)
+    command: build
+    Dockerfile: Dockerfile
+
+- task: DownloadSecureFile@1
+  name: authkey
+  displayName: 'Download Service Account Key'
+  inputs:
+    secureFile: 'servicepica-puj-google-key.json'
+    retryCount: '2'
+
+- script:
+    cat '$(key-json-path)' | docker login -u _json_key --password-stdin $(url-acr-https)
+  displayName: 'Auth Google Cloud'
+
+- script: 
+    docker push $(url-acr)/$(proyect-id)/$(repository-back)/$(service-image):$(Build.BuildId)
+  displayName: 'Push image to GCR'
+
+- script: |
+    var_image_container_k8s_replace='$(url-acr)/$(proyect-id)/$(repository-back)/$(service-image):$(Build.BuildId)'
+    sed -i '' "s,IMAGE_CONTAINER_K8S_REPLACE,${var_image_container_k8s_replace}," ./kubernetes/$(service-image)-deployment.yaml
+    kubectl apply -f ./kubernetes/$(service-image)-deployment.yaml
+  displayName: 'Deploy kubernetes pod'
